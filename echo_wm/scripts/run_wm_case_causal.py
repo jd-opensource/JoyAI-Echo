@@ -65,10 +65,13 @@ def build_command(args: argparse.Namespace) -> list[str]:
         ("--video-local-attn-size", args.video_local_attn_size),
         ("--video-sink-size", args.video_sink_size),
         ("--video-chunk-size", args.video_chunk_size),
+        ("--quantization", args.quantization),
     ):
         if value is not None:
             command += [flag, str(value)]
     command += ["--action-overlay" if args.action_overlay else "--no-action-overlay"]
+    if args.rocm_fp8_fast_accum:
+        command += ["--rocm-fp8-fast-accum"]
     if "seed" in data:
         command += ["--seed", str(data["seed"])]
     return command
@@ -85,6 +88,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--num-frames", type=int)
     parser.add_argument("--width", type=int)
     parser.add_argument("--height", type=int)
+    parser.add_argument(
+        "--quantization", choices=("none", "fp8-cast", "rocm-fp8", "rocm-fp8-reference"),
+    )
+    parser.add_argument("--rocm-fp8-fast-accum", action="store_true")
     parser.add_argument(
         "--video-local-attn-size", "--video_local_attn_size",
         dest="video_local_attn_size", type=int,

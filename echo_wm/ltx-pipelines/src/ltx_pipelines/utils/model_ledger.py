@@ -122,8 +122,18 @@ class ModelLedger:
 
     def build_model_builders(self) -> None:
         if self.checkpoint_path is not None:
+            model_path = self.checkpoint_path
+            if self.quantization is not None and self.quantization.checkpoint_format is not None:
+                from ltx_core.quantization.rocm_checkpoint import resolve_rocm_checkpoint
+                from ltx_core.quantization.rocm_fp8 import CHECKPOINT_FORMAT
+
+                if self.quantization.checkpoint_format != CHECKPOINT_FORMAT:
+                    raise ValueError(f"unsupported checkpoint format: {self.quantization.checkpoint_format}")
+                if self.loras:
+                    raise ValueError("LoRA fusion is not supported by the prequantized ROCm FP8 path")
+                model_path = resolve_rocm_checkpoint(self.checkpoint_path)
             self.transformer_builder = Builder(
-                model_path=self.checkpoint_path,
+                model_path=model_path,
                 model_class_configurator=LTXModelConfigurator,
                 model_sd_ops=LTXV_MODEL_COMFY_RENAMING_MAP,
                 loras=tuple(self.loras),
@@ -131,35 +141,35 @@ class ModelLedger:
             )
 
             self.vae_decoder_builder = Builder(
-                model_path=self.checkpoint_path,
+                model_path=model_path,
                 model_class_configurator=VideoDecoderConfigurator,
                 model_sd_ops=VAE_DECODER_COMFY_KEYS_FILTER,
                 registry=self.registry,
             )
 
             self.vae_encoder_builder = Builder(
-                model_path=self.checkpoint_path,
+                model_path=model_path,
                 model_class_configurator=VideoEncoderConfigurator,
                 model_sd_ops=VAE_ENCODER_COMFY_KEYS_FILTER,
                 registry=self.registry,
             )
 
             self.audio_encoder_builder = Builder[AudioEncoder](
-                model_path=self.checkpoint_path,
+                model_path=model_path,
                 model_class_configurator=AudioEncoderConfigurator,
                 model_sd_ops=AUDIO_VAE_ENCODER_COMFY_KEYS_FILTER,
                 registry=self.registry,
             )
 
             self.audio_decoder_builder = Builder(
-                model_path=self.checkpoint_path,
+                model_path=model_path,
                 model_class_configurator=AudioDecoderConfigurator,
                 model_sd_ops=AUDIO_VAE_DECODER_COMFY_KEYS_FILTER,
                 registry=self.registry,
             )
 
             self.vocoder_builder = Builder(
-                model_path=self.checkpoint_path,
+                model_path=model_path,
                 model_class_configurator=VocoderConfigurator,
                 model_sd_ops=VOCODER_COMFY_KEYS_FILTER,
                 registry=self.registry,
@@ -167,7 +177,7 @@ class ModelLedger:
 
             # Embeddings processor only needs the LTX checkpoint (no Gemma weights)
             self.embeddings_processor_builder = Builder(
-                model_path=self.checkpoint_path,
+                model_path=model_path,
                 model_class_configurator=EmbeddingsProcessorConfigurator,
                 model_sd_ops=EMBEDDINGS_PROCESSOR_KEY_OPS,
                 registry=self.registry,

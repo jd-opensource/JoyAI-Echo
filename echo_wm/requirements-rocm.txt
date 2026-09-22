@@ -1,0 +1,3 @@
+# Install matching ROCm torch/torchvision/torchaudio wheels first; see README_ROCM.md.
+# Deliberately do not install CUDA torch wheels, xformers, or TensorRT-LLM.
+-r requirements-common.txt
