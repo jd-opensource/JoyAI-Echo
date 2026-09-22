@@ -25,6 +25,10 @@ relative geometry as the active window moves.
 The longer-horizon Echo-WM Flash checkpoint will be released alongside a
 streaming online demo in a future update. Stay tuned.
 
+An opt-in, prequantized ROCm path is documented in
+[README_ROCM.md](README_ROCM.md). The default checkpoint, four-step schedule,
+audio-video generation, and CUDA installation remain unchanged.
+
 ## 📥 Download Checkpoints
 
 Download the Echo-WM checkpoints from the `echo_wm` directory:

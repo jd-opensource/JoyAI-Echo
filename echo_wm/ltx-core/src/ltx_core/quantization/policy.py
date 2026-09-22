@@ -16,6 +16,17 @@ class QuantizationPolicy:
 
     sd_ops: SDOps | None = None
     module_ops: tuple[ModuleOps, ...] = ()
+    checkpoint_format: str | None = None
+
+    @classmethod
+    def rocm_fp8_prequantized(
+        cls, *, reference: bool = False, fast_accum: bool = False,
+    ) -> "QuantizationPolicy":
+        """Load converted scaled-FP8 FFNs; native ROCm execution is explicit."""
+        from ltx_core.quantization.rocm_fp8 import CHECKPOINT_FORMAT, rocm_fp8_operations
+
+        sd_ops, module_ops = rocm_fp8_operations(reference=reference, fast_accum=fast_accum)
+        return cls(sd_ops=sd_ops, module_ops=module_ops, checkpoint_format=CHECKPOINT_FORMAT)
 
     @classmethod
     def fp8_cast(cls) -> "QuantizationPolicy":

@@ -7,39 +7,9 @@
 torch==2.9.1
 torchaudio==2.9.1
 torchvision==0.24.1
-einops
-numpy
-transformers>=4.52,<5.0
-safetensors
-accelerate
-scipy>=1.14
-
-# Video processing
-opencv-python
-imageio
-imageio-ffmpeg
-av
+-r requirements-common.txt
 
 # Optional acceleration.
 # xformers builds track a specific torch release: 0.0.35 targets torch 2.11 and
 # fails to import against the pinned 2.9.1. Keep this aligned with torch above.
 xformers==0.0.33.post2
-
-# UI and visualization
-# gradio is capped below 6.0: 6.x requires huggingface-hub>=1.16, which conflicts
-# with the huggingface-hub<1.0 that transformers 4.x requires.
-gradio>=5.0,<6.0
-matplotlib
-pillow
-
-# Utilities
-tqdm
-pyyaml
-omegaconf
-
-# Hugging Face integration
-huggingface-hub<1.0
-
-# Additional utilities
-sentencepiece
-protobuf
