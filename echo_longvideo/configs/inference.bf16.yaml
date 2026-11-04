@@ -63,8 +63,8 @@ inference:
   text_batch_size: 1
   image_batch_size: 1
   audio_batch_size: 1
-  # Experimental H3-style DiT weight streaming. Disabled keeps the release
-  # pipeline unchanged. Immutable block weights remain on CPU when enabled.
+  # Layerwise DiT weight streaming for low-VRAM inference. Disabled keeps the
+  # release pipeline unchanged. Immutable block weights remain on CPU when enabled.
   dit_layerwise_offload:
     enabled: false
     resident_blocks: 0
