@@ -1,0 +1,22 @@
+# Shared by the CUDA and ROCm environments. Accelerator wheels are installed separately.
+einops
+numpy
+# Bundled Gemma expects the transformers 4.x Siglip layout.
+transformers>=4.52,<5.0
+safetensors
+accelerate
+scipy>=1.14
+opencv-python
+imageio
+imageio-ffmpeg
+av
+# Gradio 6 requires a huggingface-hub version incompatible with transformers 4.x.
+gradio>=5.0,<6.0
+matplotlib
+pillow
+tqdm
+pyyaml
+omegaconf
+huggingface-hub<1.0
+sentencepiece
+protobuf

@@ -26,6 +26,25 @@ def _override(value, default):
     return default if value is None else value
 
 
+def _quantization_policy(name: str, device: torch.device, *, fast_accum: bool = False):
+    if fast_accum and name != "rocm-fp8":
+        raise ValueError("--rocm-fp8-fast-accum requires --quantization rocm-fp8")
+    if name == "none":
+        return None
+    from ltx_core.quantization import QuantizationPolicy
+
+    if name == "fp8-cast":
+        return QuantizationPolicy.fp8_cast()
+    if name == "rocm-fp8":
+        from ltx_core.quantization.rocm_fp8 import require_rocm_fp8
+
+        require_rocm_fp8(device, probe=True, fast_accum=fast_accum)
+        return QuantizationPolicy.rocm_fp8_prequantized(fast_accum=fast_accum)
+    if name == "rocm-fp8-reference":
+        return QuantizationPolicy.rocm_fp8_prequantized(reference=True)
+    raise ValueError(f"unknown quantization policy: {name}")
+
+
 def _auto_fov(image: Path, model: str, python_bin: str, width: int, height: int) -> float:
     raw = subprocess.run(
         [python_bin, str(ROOT / "helpers" / "moge_fov.py"), "--image", str(image), "--model", model,
@@ -68,6 +87,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--seed", type=int)
     parser.add_argument("--no-audio", action="store_true")
+    parser.add_argument(
+        "--quantization", choices=("none", "fp8-cast", "rocm-fp8", "rocm-fp8-reference"),
+        default="none", help="Explicit transformer policy; the original BF16 path remains the default.",
+    )
+    parser.add_argument(
+        "--rocm-fp8-fast-accum", action="store_true",
+        help="Opt in to faster, lower-precision accumulation for native ROCm FP8.",
+    )
     parser.add_argument(
         "--action-overlay", action=argparse.BooleanOptionalAction, default=True,
         help="Write a second MP4 with a Genie-style action HUD overlay "
@@ -132,6 +159,9 @@ def main() -> None:
         fov_deg=fov, fps=fps,
     )
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    quantization = _quantization_policy(
+        args.quantization, device, fast_accum=args.rocm_fp8_fast_accum,
+    )
     action = build_causal_action_condition(device=device, **action_kwargs)
     trajectory = build_action_trajectory(
         args.action_str, num_frames=num_frames,
@@ -142,6 +172,7 @@ def main() -> None:
 
     pipeline = CausalTI2VidPipeline(
         checkpoint_path=str(checkpoint), gemma_root=str(gemma_path), device=device,
+        quantization=quantization,
         action_config=action_config(width, height), cache_config=cache,
     )
     video, audio = pipeline(
@@ -163,6 +194,7 @@ def main() -> None:
         overlay_genie_on_video(args.output, trajectory, output_path=overlay_output)
     metadata = {
         "mode": "causal_4_step", "prompt": args.prompt, "action": args.action_str,
+        "quantization": args.quantization, "rocm_fp8_fast_accum": args.rocm_fp8_fast_accum,
         "checkpoint": str(checkpoint), "timesteps": list(timesteps), "seed": seed,
         "width": width, "height": height, "num_frames": num_frames, "fps": fps,
         "video_local_attn_size": cache.video_local_attn_size,
